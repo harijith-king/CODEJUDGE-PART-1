@@ -1,0 +1,139 @@
+```md
+# Keys and Relationships
+
+This document explains the keys, constraints, and relationships used in the CodeJudge database design.
+
+---
+
+# Primary Keys of the tables:
+It is the unique key in the tables which doesn't duplicate or not contain NULL values in it.
+
+|     Table       |    Primary Key |
+|-----------------|-------------|
+| batches           | batch_id |
+| students          | student_id |
+| courses           | course_id |
+| enrollments       | enrollment_id |
+| contests          | contest_id |
+| problems          | problem_id |
+| contest_problems  | contest_problem_id |
+| submissions       | submission_id |
+| test_cases        | testcase_id |
+| test_results      | result_id |
+| sessions          | session_id |
+| attendance        | attendance_id |
+| regrade_requests  | request_id |
+| plagiarism_flags  | flag_id |
+| operation_requests | operation_id |
+
+---
+
+# Foreign Keys and Relationships
+
+Foreign keys are used to connect related tables and maintain referential integrity.
+
+| Table        |   Foreign Key |   Referenced Table |
+|--------------|---------------|--------------------|
+| students     | batch_id      | batches(batch_id) |
+| enrollments  | student_id    | students(student_id) |
+| enrollments  | course_id     | courses(course_id) |
+| problems     | course_id     | courses(course_id) |
+| contest_problems | contest_id | contests(contest_id) |
+| contest_problems | problem_id | problems(problem_id) |
+| submissions  | student_id    | students(student_id) |
+| submissions  | problem_id    | problems(problem_id) |
+| submissions  | contest_id    | contests(contest_id) |
+| test_cases   | problem_id    | problems(problem_id) |
+| test_results | submission_id | submissions(submission_id) |
+| test_results | testcase_id   | test_cases(testcase_id) |
+| sessions     | course_id     | courses(course_id) |
+| attendance   | session_id    | sessions(session_id) |
+| attendance   | student_id    | students(student_id) |
+| regrade_requests | submission_id | submissions(submission_id) |
+| plagiarism_flags | submission_id | submissions(submission_id) |
+
+# Candidate Keys
+Some columns can also uniquely identify records apart from the primary key.
+
+Examples:
+- `roll_number` in students table
+- `email` in students table
+- `course_code` in courses table
+- `problem_code` in problems table
+
+These are treated as candidate keys and are enforced using UNIQUE constraints.
+
+# Composite Keys
+Some tables require a combination of columns to avoid duplicate records.
+## Enrollments Table
+Composite Key:
+- `(student_id, course_id)`
+Reason:
+A student should not enroll in the same course multiple times.
+
+## Contest_Problems Table
+Composite Key:
+- `(contest_id, problem_id)`
+Reason:
+The same problem should not appear repeatedly in a contest.
+
+## Attendance Table
+Composite Key:
+- `(session_id, student_id)`
+Reason:
+A student's attendance should be recorded only once per session.
+
+# NOT NULL Constraints
+Important columns are restricted from storing NULL values.
+Examples:
+- Student name cannot be NULL.
+- Email cannot be NULL.
+- Course name cannot be NULL.
+- Problem title cannot be NULL.
+These constraints ensure mandatory information is always available.
+
+# CHECK Constraints
+CHECK constraints are used to maintain valid data values.
+
+Examples:
+
+- Problem difficulty can only be:
+  - Easy
+  - Medium
+  - Hard
+- Attendance status can only be:
+  - Present
+  - Absent
+  - Late
+- Similarity percentage in plagiarism flags must remain between 0 and 100.
+- Contest end time must always be greater than start time.
+
+# Relationship Types
+## One-to-Many Relationships
+
+The database contains several one-to-many relationships.
+
+Examples:
+- One batch can contain many students.
+- One course can contain many problems.
+- One student can make many submissions.
+- One problem can contain many test cases.
+- One submission can contain many test results.
+
+## Many-to-Many Relationships
+### Students and Courses
+A student can enroll in multiple courses, and a course can contain multiple students.
+This relationship is handled using the `enrollments` table.
+
+### Contests and Problems
+A contest can contain multiple problems, and a problem can appear in multiple contests.
+This relationship is handled using the `contest_problems` table.
+
+# Referential Integrity
+Foreign key constraints are used to maintain consistency between related tables.
+For example:
+- A submission cannot exist without a valid student.
+- Attendance cannot exist without a valid session.
+- Test results cannot exist without a valid submission.
+
+These rules help prevent invalid or orphan records in the database.
