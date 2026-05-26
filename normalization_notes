@@ -1,0 +1,238 @@
+This document explains the normalization reasoning used in the CodeJudge database design. 
+The normalization will make the data analyzed to reduce redundancy, improve consistency, and maintain proper relational structure.
+
+# Relationship diagram
+
+Batches
+│
+└───< Students
+        │
+        ├───< Enrollments >─── Courses
+        │
+        ├───< Submissions >─── Problems
+        │                           │
+        │                           └───< Test_Cases
+        │
+        └───< Attendance >─── Sessions
+
+Contests
+│
+└───< Contest_Problems >─── Problems
+
+Submissions
+│
+├───< Test_Results
+│
+└───< Plagiarism_Flags
+
+These relationships were used to make the normaliztion practical by making it come under the 1NF,2NF,3NF.
+
+# First Normal Form (1NF)
+A table is in First Normal Form when:
+- all values are atomic(no repeating groups)
+- every record is uniquely identifiable
+
+## Implementation
+
+The schema satisfies 1NF because:
+- each column stores only one value
+- tables contain unique "primary keys"
+- repeating groups were removed
+
+## Example
+
+| submission_id | languages |
+|----------------|-----------|
+| 1 | Python, Java |
+
+the design stores only one language per submission:
+
+| submission_id | programming_language |
+|----------------|----------------------|
+| 1 | Python |
+
+This improves query performance and consistency.
+
+---
+# Second Normal Form (2NF)
+A table is in Second Normal Form when:
+- it is already in 1NF
+- non-key attributes fully depend on the entire primary key
+
+## Example 1: Enrollments Table
+The enrollments table stores:
+- enrollment_id
+- student_id
+- course_id
+- enrollment_status
+
+Course details such as course_name and credits are stored separately in the courses table.
+
+### Before Separation
+
+| enrollment_id | student_id | course_name | credits |
+|----------------|------------|-------------|----------|
+
+This causes repeated course information.
+
+### After Separation
+Enrollments table:
+- enrollment_id
+- student_id
+- course_id
+Courses table:
+- course_id
+- course_name
+- credits
+This removes partial dependency and reduces redundancy.
+
+## Example 2: Contest Problems
+
+Contest information and problem information are separated into different tables.
+The many-to-many relationship is resolved using:
+- contest_problems table
+This prevents repeated contest and problem details.
+
+# Third Normal Form (3NF)
+
+A table is in Third Normal Form when:
+- it is already in 2NF
+- non-key attributes do not depend on other non-key attributes
+
+## Example 1: Batch Information
+
+Student records contain only:
+- batch_id
+
+Actual batch details are stored in the batches table.
+
+### Benefits
+- avoids repeated batch information
+- simplifies updates
+- improves consistency
+
+---
+
+## Example 2: Test Results
+
+Submission evaluation results are separated into the test_results table instead of storing all testcase outputs inside submissions.
+
+This prevents unnecessary repetition and improves scalability.
+
+---
+
+# Examples of Repeated or Redundant Data
+
+## Example 1
+Course details would repeat in enrollments if course_name and credits were stored directly inside the enrollments table.
+
+Normalization solved this by creating a separate courses table.
+
+---
+
+## Example 2
+Problem details could repeat in contest records if problems were stored directly inside contests.
+
+Normalization solved this using the contest_problems mapping table.
+
+---
+
+## Example 3
+Student information would repeat in submissions if student names and emails were stored repeatedly for every submission.
+
+Normalization solved this by referencing students using student_id.
+
+---
+
+# Examples Where Separating Data Improved Design
+
+## Example 1: Courses Table
+
+Separating course information into a dedicated courses table:
+- reduced duplicate data
+- simplified updates
+- improved consistency
+
+---
+
+## Example 2: Test Cases Table
+
+Separating test case information from problems:
+- improved modularity
+- supported multiple test cases per problem
+- reduced repeated input/output storage
+
+---
+
+# Functional Dependency Examples
+
+## Example 1
+
+student_id → full_name, email, batch_id
+
+Meaning:
+A student_id uniquely determines student details.
+
+---
+
+## Example 2
+
+problem_id → title, difficulty, max_score
+
+Meaning:
+A problem_id uniquely determines problem information.
+
+---
+
+# Partial Dependency Example
+
+In the enrollments relationship:
+
+(student_id, course_id) → enrollment_status
+
+The enrollment status depends on the combination of both student and course.
+
+This relationship is handled properly using the enrollments table.
+
+---
+
+# Design Trade-offs
+
+Some design decisions were intentionally simplified.
+
+## Example 1
+Status fields such as:
+- enrollment_status
+- attendance_status
+- submission_status
+
+were stored as text values instead of separate lookup tables.
+
+This simplifies implementation while still maintaining clarity.
+
+---
+
+## Example 2
+The raw_student_import table remains partially denormalized because it acts as a temporary staging table during import operations.
+
+This improves import flexibility.
+
+---
+
+# Final Normalization Status
+
+The final database schema approximately satisfies:
+
+- First Normal Form (1NF)
+- Second Normal Form (2NF)
+- Third Normal Form (3NF)
+
+The design:
+- reduces redundancy
+- improves data consistency
+- supports relational integrity
+- minimizes update anomalies
+- improves maintainability
+
+while still keeping the schema practical and easy to manage.
+```
